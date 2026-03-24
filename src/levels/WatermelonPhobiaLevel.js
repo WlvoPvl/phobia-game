@@ -1,6 +1,11 @@
 import * as THREE from 'three';
+import { resourceManager } from '../resource-manager.js';
 
 export class WatermelonPhobiaLevel {
+  // 共享几何体和材质，避免重复创建
+  static seedGeometry = null;
+  static seedMaterial = null;
+
   static create(state) {
     // 西瓜恐惧症 - 白天西瓜田
     state.scene.background = new THREE.Color(0x87CEEB); // 天蓝色
@@ -111,6 +116,14 @@ export class WatermelonPhobiaLevel {
     state.camera.rotation.set(0, 0, 0);
     
     state.levelBounds = { minX: -28, maxX: 28, minZ: -125, maxZ: 8 };
+
+    // 初始化共享的种子几何体和材质
+    if (!this.seedGeometry) {
+      this.seedGeometry = new THREE.SphereGeometry(0.06, 4, 4);
+    }
+    if (!this.seedMaterial) {
+      this.seedMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
+    }
   }
 
   static createWatermelon(state, isChaser) {
@@ -221,27 +234,25 @@ export class WatermelonPhobiaLevel {
        }
     });
 
-    // 飞行种子
+    // 飞行种子 - 使用共享几何体和材质
     if (state.wmTimer > 2) {
       state.wmTimer = 0;
-      
-      const seed = new THREE.Mesh(
-        new THREE.SphereGeometry(0.06, 4, 4),
-        new THREE.MeshStandardMaterial({ color: 0x1a1a1a })
-      );
-      
+
+      // 使用共享几何体和材质，避免内存泄漏
+      const seed = new THREE.Mesh(this.seedGeometry, this.seedMaterial);
+
       const src = state.watermelons[Math.floor(Math.random() * Math.min(10, state.watermelons.length))];
       seed.position.copy(src.position);
       seed.position.y = src.userData.size * 0.8;
-      
-      seed.userData = { 
+
+      seed.userData = {
         vel: new THREE.Vector3()
           .subVectors(cp, src.position)
           .normalize()
           .multiplyScalar(5 + Math.random() * 3),
         life: 4
       };
-      
+
       state.levelScene.add(seed);
       state.flyingSeeds.push(seed);
     }
@@ -296,6 +307,17 @@ export class WatermelonPhobiaLevel {
   static endLevelWrapper(state, success, msg) {
     if (typeof window !== 'undefined' && window._endLevel) {
       window._endLevel(success, msg);
+    }
+  }
+
+  // 清理关卡资源
+  static cleanup(state) {
+    // 清理飞行种子（从场景移除，但不dispose共享几何体）
+    if (state.flyingSeeds) {
+      state.flyingSeeds.forEach(seed => {
+        if (seed.parent) seed.parent.remove(seed);
+      });
+      state.flyingSeeds = [];
     }
   }
 }

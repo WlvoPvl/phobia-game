@@ -7,7 +7,6 @@ import { EffectsSystem } from './effects.js';
 import { CONFIG, DEFAULT_STATE } from './config.js';
 import * as office from './office.js';
 import { LightingHelper } from './lighting-helper.js';
-import './test-bot.js';
 
 // 导入新模块
 import { UIManager } from './ui-manager.js';

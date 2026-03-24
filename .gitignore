@@ -7,6 +7,9 @@ dist/
 # Backups & old files
 backups/
 
+# Community folder
+community/
+
 # OS files
 .DS_Store
 Thumbs.db

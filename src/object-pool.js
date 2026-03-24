@@ -88,15 +88,40 @@ export class ObjectPool {
  * 3D对象池 - 专门为Three.js对象设计
  */
 export class GameObjectPool extends ObjectPool {
-  constructor(createFn, initialSize = 10) {
-    const resetFn = (obj, position, rotation, scale) => {
-      if (position) obj.position.copy(position);
-      if (rotation) obj.rotation.copy(rotation);
-      if (scale) obj.scale.copy(scale);
-      obj.visible = true;
-    };
-    
-    super(createFn, resetFn, initialSize);
+  /**
+   * @param {Function} createFn - 创建函数
+   * @param {Function|number} resetFnOrSize - 重置函数或初始大小
+   * @param {number} initialSize - 初始大小（如果第二个参数是函数）
+   */
+  constructor(createFn, resetFnOrSize = 10, initialSize = 10) {
+    let resetFn;
+    let size;
+
+    // 支持两种调用方式:
+    // 1. new GameObjectPool(createFn, initialSize)
+    // 2. new GameObjectPool(createFn, resetFn, initialSize)
+    if (typeof resetFnOrSize === 'function') {
+      resetFn = resetFnOrSize;
+      size = initialSize;
+    } else {
+      resetFn = (obj, position, rotation, scale) => {
+        if (position && obj.mesh) {
+          obj.mesh.position.copy(position);
+        } else if (position && obj.position) {
+          obj.position.copy(position);
+        }
+        if (rotation && obj.rotation) obj.rotation.copy(rotation);
+        if (scale) {
+          if (obj.mesh) obj.mesh.scale.setScalar(scale);
+          else if (obj.scale) obj.scale.setScalar(scale);
+        }
+        if (obj.mesh) obj.mesh.visible = true;
+        if (obj.visible !== undefined) obj.visible = true;
+      };
+      size = resetFnOrSize;
+    }
+
+    super(createFn, resetFn, size);
   }
   
   /**

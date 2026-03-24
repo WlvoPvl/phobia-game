@@ -4,6 +4,7 @@ import { GameObjectPool } from '../object-pool.js';
 
 export class ArachnophobiaLevel {
   static spiderPool = null;
+  static poolInitialized = false;
 
   static create(state) {
     state.spiders = [];
@@ -77,17 +78,84 @@ export class ArachnophobiaLevel {
     // 关卡边界
     state.levelBounds = { minX: -40, maxX: 40, minZ: -40, maxZ: 40 };
 
-    // 初始化蜘蛛对象池
-    this.spiderPool = new GameObjectPool(
-      () => {
-        const defaultPos = new THREE.Vector3(0, 0, -100);
-        const spider = this.createSpider(0.3, defaultPos);
-        spider.mesh.visible = false;
-        state.levelScene.add(spider.mesh);
-        return spider;
-      },
-      30
-    );
+    // 初始化蜘蛛对象池 - 使用正确的池化模式
+    this.initSpiderPool(state);
+  }
+
+  // 初始化蜘蛛对象池
+  static initSpiderPool(state) {
+    const createFn = () => {
+      const spider = this.createSpiderBase(1.0); // 默认尺寸
+      spider.mesh.visible = false;
+      state.levelScene.add(spider.mesh);
+      return spider;
+    };
+
+    const resetFn = (spider, position, size, speed) => {
+      spider.mesh.position.copy(position);
+      spider.mesh.scale.setScalar(size); // 通过缩放调整尺寸
+      spider.mesh.visible = true;
+      spider.speed = speed;
+      spider.active = true;
+    };
+
+    this.spiderPool = new GameObjectPool(createFn, resetFn, 30);
+    this.poolInitialized = true;
+  }
+
+  // 创建基础蜘蛛（不依赖尺寸参数）
+  static createSpiderBase(baseSize) {
+    const g = new THREE.Group();
+    const bm = new THREE.MeshStandardMaterial({ color: 0x1a0a0a, roughness: 0.7 });
+    const lm = new THREE.MeshStandardMaterial({ color: 0x220808, roughness: 0.8 });
+
+    const abd = new THREE.Mesh(new THREE.SphereGeometry(baseSize * 0.5, 12, 12), bm);
+    abd.position.y = baseSize * 0.4;
+    g.add(abd);
+
+    const cep = new THREE.Mesh(new THREE.SphereGeometry(baseSize * 0.35, 10, 10), bm);
+    cep.position.set(0, baseSize * 0.38, baseSize * 0.3);
+    g.add(cep);
+
+    for (let i = 0; i < 8; i++) {
+      const side = i < 4 ? 1 : -1;
+      const legIndex = i % 4;
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, baseSize * 0.9, 6), lm);
+      leg.position.set(
+        side * (0.25 + legIndex * 0.18),
+        baseSize * 0.35,
+        (legIndex - 1.5) * baseSize * 0.35
+      );
+      leg.rotation.z = side * 0.6;
+      leg.rotation.x = (legIndex - 1.5) * 0.35;
+      g.add(leg);
+    }
+
+    const eyeGeo = new THREE.SphereGeometry(0.05, 6, 6);
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    for (let i = -1; i <= 1; i += 2) {
+      const eye = new THREE.Mesh(eyeGeo, eyeMat);
+      eye.position.set(i * 0.12, baseSize * 0.42, baseSize * 0.55);
+      g.add(eye);
+    }
+
+    const fangMat = new THREE.MeshStandardMaterial({ color: 0x332222 });
+    for (let i = -1; i <= 1; i += 2) {
+      const fang = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.12, 4), fangMat);
+      fang.position.set(i * 0.06, baseSize * 0.25, baseSize * 0.6);
+      fang.rotation.x = 0.3;
+      g.add(fang);
+    }
+
+    return { mesh: g, speed: 0.8, active: false };
+  }
+
+  // 保留旧方法兼容性
+  static createSpider(size, pos) {
+    const spider = this.createSpiderBase(size);
+    spider.mesh.position.copy(pos);
+    spider.speed = 0.6 + Math.random() * 0.4;
+    return spider;
   }
 
   static createForest(state) {
@@ -252,56 +320,10 @@ export class ArachnophobiaLevel {
     });
   }
 
-  static createSpider(size, pos) {
-    const g = new THREE.Group();
-    const bm = new THREE.MeshStandardMaterial({ color: 0x1a0a0a, roughness: 0.7 });
-    const lm = new THREE.MeshStandardMaterial({ color: 0x220808, roughness: 0.8 });
-
-    const abd = new THREE.Mesh(new THREE.SphereGeometry(size * 0.5, 12, 12), bm);
-    abd.position.y = size * 0.4;
-    g.add(abd);
-
-    const cep = new THREE.Mesh(new THREE.SphereGeometry(size * 0.35, 10, 10), bm);
-    cep.position.set(0, size * 0.38, size * 0.3);
-    g.add(cep);
-
-    for (let i = 0; i < 8; i++) {
-      const side = i < 4 ? 1 : -1;
-      const legIndex = i % 4;
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, size * 0.9, 6), lm);
-      leg.position.set(
-        side * (0.25 + legIndex * 0.18),
-        size * 0.35,
-        (legIndex - 1.5) * size * 0.35
-      );
-      leg.rotation.z = side * 0.6;
-      leg.rotation.x = (legIndex - 1.5) * 0.35;
-      g.add(leg);
-    }
-
-    const eyeGeo = new THREE.SphereGeometry(0.05, 6, 6);
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    for (let i = -1; i <= 1; i += 2) {
-      const eye = new THREE.Mesh(eyeGeo, eyeMat);
-      eye.position.set(i * 0.12, size * 0.42, size * 0.55);
-      g.add(eye);
-    }
-
-    const fangMat = new THREE.MeshStandardMaterial({ color: 0x332222 });
-    for (let i = -1; i <= 1; i += 2) {
-      const fang = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.12, 4), fangMat);
-      fang.position.set(i * 0.06, size * 0.25, size * 0.6);
-      fang.rotation.x = 0.3;
-      g.add(fang);
-    }
-
-    g.position.copy(pos);
-    return { mesh: g, speed: 0.6 + Math.random() * 0.4 };
-  }
-
   static update(state, dt) {
     state.levelTime += dt;
 
+    // 生成蜘蛛波
     if (state.levelTime > state.spiderTimer) {
       state.spiderWave++;
       state.spiderTimer = state.levelTime + 4;
@@ -321,21 +343,24 @@ export class ArachnophobiaLevel {
       for (let i = 0; i < count; i++) {
         const offset = new THREE.Vector3();
         offset.copy(spawnDir);
-        
+
         if (state.spiderWave % 3 === 0) {
           offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), (i - (count - 1) / 2) * 0.4);
         } else {
           offset.z += (i - (count - 1) / 2) * 2;
         }
-        
+
         const dist = 8 + Math.random() * 7;
         const pos = new THREE.Vector3(
           playerPos.x + offset.x * dist,
           0.2,
           playerPos.z + offset.z * dist
         );
-         const spider = this.createSpider(1.0 + Math.random() * 0.5, pos);
-        state.levelScene.add(spider.mesh);
+
+        // 使用对象池获取蜘蛛
+        const size = 1.0 + Math.random() * 0.5;
+        const speed = 0.6 + Math.random() * 0.4;
+        const spider = this.spiderPool.acquire(pos, size, speed);
         state.spiders.push(spider);
       }
     }
@@ -343,6 +368,8 @@ export class ArachnophobiaLevel {
     // 更新蜘蛛 AI
     const playerPos = state.camera.position;
     for (const spider of state.spiders) {
+      if (!spider.active) continue;
+
       const dir = new THREE.Vector3().subVectors(playerPos, spider.mesh.position);
       dir.y = 0;
       const dist = dir.length();
@@ -353,21 +380,26 @@ export class ArachnophobiaLevel {
         spider.mesh.lookAt(playerPos.x, spider.mesh.position.y, playerPos.z);
       }
 
-      // 触碰检测
-      if (dist < 1.0) {
-        state.sanity -= 30;
+      // 触碰检测 - 只触发一次伤害
+      if (dist < 1.0 && spider.active) {
+        state.sanity -= 25;
         state.scareTriggered = true;
+        spider.active = false; // 标记为已触碰
+
         if (state.effectsSystem) {
           state.effectsSystem.flashScreen('red', 0.5, 0.2);
         }
       }
     }
 
-    // 清理过近的蜘蛛
+    // 清理过近的蜘蛛 - 归还到对象池
     state.spiders = state.spiders.filter(sp => {
       const dist = sp.mesh.position.distanceTo(playerPos);
-      if (dist < 0.5) {
-        sp.mesh.parent.remove(sp.mesh);
+      if (dist < 0.5 || !sp.active) {
+        // 归还到池中
+        sp.mesh.visible = false;
+        sp.active = false;
+        this.spiderPool.release(sp);
         return false;
       }
       return true;
@@ -384,6 +416,15 @@ export class ArachnophobiaLevel {
     }
 
     return null;
+  }
+
+  // 清理资源
+  static cleanup() {
+    if (this.spiderPool) {
+      this.spiderPool.clear();
+      this.spiderPool = null;
+    }
+    this.poolInitialized = false;
   }
 }
 

@@ -30,16 +30,17 @@ export class LevelManager {
           sp.mesh.parent.remove(sp.mesh);
           resourceManager.disposeObject(sp.mesh);
         }
-     });
-     this.state.spiders = [];
+      });
+      this.state.spiders = [];
 
-     // 清理蜘蛛对象池
-     if (typeof ArachnophobiaLevel !== 'undefined' && ArachnophobiaLevel.spiderPool) {
-       ArachnophobiaLevel.spiderPool.clear();
-       ArachnophobiaLevel.spiderPool = null;
-     }
+      // 清理蜘蛛对象池
+      if (typeof ArachnophobiaLevel !== 'undefined' && ArachnophobiaLevel.spiderPool) {
+        ArachnophobiaLevel.spiderPool.clear();
+        ArachnophobiaLevel.spiderPool = null;
+      }
+    }
 
-     // 清理灯光
+    // 清理灯光
     if (this.state.levelLights) {
       this.state.levelLights.forEach(light => {
         if (light.parent) light.parent.remove(light);

@@ -24,10 +24,13 @@ export const CONFIG = {
 
   // 玩家移动
   movement: {
-    speed: 4,
-    acceleration: 10,
-    friction: 8,
-    maxVelocity: 10
+    speed: 10,           // 基础移动速度
+    sprintMultiplier: 1.8, // 冲刺倍率
+    acceleration: 15,
+    friction: 10,
+    maxVelocity: 15,
+    jumpVelocity: 5,
+    gravity: 12
   },
 
   // 理智系统
