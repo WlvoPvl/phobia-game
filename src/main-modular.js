@@ -26,6 +26,7 @@ import { updateLevelsWithClasses, LEVEL_CLASSES } from './levels-updater.js';
 import { initEnhancements } from './enhancements.js';
 import { eventBus, GameEvents } from './event-system.js';
 import { resourceManager } from './resource-manager.js';
+import { performanceMonitorEnhanced } from './performance-monitor-enhanced.js';
 
 // 游戏全局状态
 const state = { ...DEFAULT_STATE };
@@ -521,9 +522,7 @@ window.exitGame = function() {
 };
 
 window.togglePerformanceMonitor = function(show) {
-  import('./performance-monitor-enhanced.js').then(module => {
-    module.performanceMonitorEnhanced.setVisible(show);
-  });
+  performanceMonitorEnhanced.setVisible(show);
 };
 
 // 启动游戏

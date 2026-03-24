@@ -87,7 +87,7 @@ export class MovementPhysics {
     }
     
     // 重力
-    const g = this.levelGravityOverrides[state.levelIndex] || this.gravity;
+    const g = this.levelGravityOverrides[this.state.levelIndex] || this.gravity;
     velocity.y -= g * dt;
     
     // 应用速度

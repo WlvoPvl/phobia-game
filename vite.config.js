@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite';
 
+const isGitHubPages = process.env.GITHUB_PAGES === 'true';
+
 export default defineConfig({
+  base: isGitHubPages ? '/phobia-game/' : '/',
   root: '.',
   publicDir: 'public',
   build: {
@@ -22,9 +25,18 @@ export default defineConfig({
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        manualChunks: {
+          'three-vendor': ['three'],
+          'game-systems': [
+            './src/game-loop.js',
+            './src/movement-physics.js',
+            './src/collision-system.js'
+          ]
+        }
       }
     },
+    chunkSizeWarningLimit: 600,
     target: 'es2020',
     cssTarget: 'chrome80'
   },

@@ -13,7 +13,7 @@ let DebugEnhancer, debugEnhancer;
 import { VisualEnhancer, visualEnhancer } from './visual-enhancer.js';
 import { SaveManager, saveManager } from './save-manager.js';
 import { AchievementSystem, achievements } from './achievement-system.js';
-import { InputManager, inputManager } from './input-manager.js';
+// input-manager.js 冗余，input-handler.js 已在使用
 import { GameStateMachine, createDefaultStates } from './game-state-machine.js';
 import { MonsterAI } from './monster-ai.js';
 import { KeySystem } from './key-system.js';
@@ -97,15 +97,6 @@ export const Enhancements = {
     show: () => achievements.show(),
     updateStat: (name, value) => achievements.updateStat(name, value),
     stats: () => achievements.stats
-  },
-  
-  // 输入管理
-  input: {
-    isKeyDown: (key) => inputManager.isKeyDown(key),
-    isMouseDown: (btn) => inputManager.isMouseButtonDown(btn),
-    on: (event, cb) => inputManager.on(event, cb),
-    enable: () => inputManager.enable(),
-    disable: () => inputManager.disable()
   },
   
   // 状态机
