@@ -187,6 +187,10 @@ function startLevel(index) {
     const LevelClass = LEVELS[index]?.levelClass;
     if (LevelClass) {
       LevelClass.create(state);
+      // 更新碰撞系统缓存
+      if (collisionSystem) {
+        collisionSystem.invalidateCache();
+      }
     } else {
       returnToOffice();
       return;
@@ -367,6 +371,23 @@ function init() {
   inputHandler.setupListeners();
 
   window.addEventListener('resize', onResize);
+
+  // WebGL 上下文丢失/恢复处理
+  canvas.addEventListener('webglcontextlost', (event) => {
+    event.preventDefault();
+    console.warn('[WebGL] Context lost, attempting recovery...');
+    if (audioManager) {
+      audioManager.enabled = false;
+    }
+  });
+
+  canvas.addEventListener('webglcontextrestored', () => {
+    console.log('[WebGL] Context restored');
+    if (audioManager) {
+      audioManager.enabled = true;
+    }
+    onResize();
+  });
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && (state.phase === 'office' || state.phase === 'level') && !dialogueSystem.isDialogueActive() && state.phase !== 'book' && state.phase !== 'end') {

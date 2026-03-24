@@ -6,7 +6,10 @@ import { LightingHelper } from './lighting-helper.js';
 import { MemoryCleanup } from './memory-cleanup.js';
 import { PerformanceMonitor, perfMonitor } from './performance-monitor.js';
 import { JumpEnhancement } from './jump-enhancement.js';
-import { DebugEnhancer, debugEnhancer } from './debug-enhancer.js';
+
+// 开发模式才导入调试模块
+let DebugEnhancer, debugEnhancer;
+
 import { VisualEnhancer, visualEnhancer } from './visual-enhancer.js';
 import { SaveManager, saveManager } from './save-manager.js';
 import { AchievementSystem, achievements } from './achievement-system.js';
@@ -65,13 +68,8 @@ export const Enhancements = {
     showHint: JumpEnhancement.showJumpHint
   },
   
-  // 调试增强
-  debug: {
-    start: (state) => debugEnhancer.start(state),
-    stop: () => debugEnhancer.stop(),
-    update: (state) => debugEnhancer.update(state),
-    createConsoleHelpers: (state) => DebugEnhancer.createConsoleHelpers(state)
-  },
+  // 调试增强 (开发模式才启用) - 默认空实现
+  debug: { start: () => {}, stop: () => {}, update: () => {}, createConsoleHelpers: () => {} },
   
   // 视觉增强
   visual: {
@@ -219,8 +217,28 @@ export const Enhancements = {
 };
 
 // 初始化所有增强功能
-export function initEnhancements() {
+export async function initEnhancements() {
   visualEnhancer.init();
+  
+  // 开发模式下初始化调试增强
+  const isDev = typeof window !== 'undefined' && window.location && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  
+  if (isDev) {
+    try {
+      const debugModule = await import('./debug-enhancer.js');
+      debugModule.debugEnhancer.start(debugModule);
+      Enhancements.debug = {
+        start: (state) => debugModule.debugEnhancer.start(state),
+        stop: () => debugModule.debugEnhancer.stop(),
+        update: (state) => debugModule.debugEnhancer.update(state),
+        createConsoleHelpers: (state) => debugModule.DebugEnhancer.createConsoleHelpers(state)
+      };
+    } catch (e) {
+      // 开发模式加载失败，静默处理
+    }
+  }
+  
   // 初始化性能监控
   performanceMonitorEnhanced.start();
   console.log('[Enhancements] All enhancements initialized');
